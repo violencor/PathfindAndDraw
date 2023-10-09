@@ -1,15 +1,40 @@
 import * as THREE from 'three';
+import * as dat from 'dat.gui';
+import * as Collision from './collision.js';
+import { BFS } from './algorithm/breadth_first_search.js';
+import {POS} from './algorithm/pos.js'
 
 let container;
-let scene, camera, renderer;
+let scene, camera, renderer, gridHelper;
+let gui;
+let pf;
+let pause = true;
+
+const gridSize = 50;
+const gridDivision = Collision.width;
+const gridSizeEach = gridSize/gridDivision;
 
 export function MapRun() {
 
-    init();
-    // createCylinder();
-    animate();
+    function createGrid(x, y, z, color) {
+
+        // box
+        const boxGeom = new THREE.BoxGeometry(gridSizeEach, gridSizeEach);
+        const box = new THREE.Mesh(boxGeom, new THREE.MeshBasicMaterial({ color:color }));
+        box.position.set(x, y, z);
+        scene.add(box);
+    }
+
+    function createGridFromMapPos(pos, color) {
+        const gridX = (pos.x - Collision.width / 2 + 1 - 0.5) * gridSizeEach;
+        const gridY = (pos.y - Collision.length / 2 + 1 - 0.5) * gridSizeEach;
+
+        createGrid(gridX, gridY, 0, color);
+    }
 
     function init() {
+        gui = new dat.GUI();
+
         container = document.createElement('div');
         document.body.appendChild(container);
 
@@ -18,33 +43,46 @@ export function MapRun() {
         scene.background = new THREE.Color( 0xffffff );
 
         // camera setup
-        camera = new THREE.OrthographicCamera(-window.innerWidth/2, window.innerWidth/2,
-                                              window.innerHeight/2, -window.innerHeight/2,
+        const aspectRatio = window.innerWidth/window.innerHeight;
+        const cameraWidth = 100;
+        const cameraHeight = cameraWidth/aspectRatio;
+        camera = new THREE.OrthographicCamera(cameraWidth/-2, cameraWidth/2, cameraHeight/2, cameraHeight/-2,
                                               1, 1000);
+        camera.position.z = 10;
+        camera.lookAt(0, 0, 0);
 
-        // Create a grid of cubes 
-        const gridSize = 10;
-        const gridHelper = new THREE.GridHelper(gridSize, gridSize, 0x000000, 0x000000);
+        const cameraFolder = gui.addFolder('CameraHelper');
+        cameraFolder.add(camera.position, 'x');
+        cameraFolder.add(camera.position, 'y');
+        cameraFolder.add(camera.position, 'z');
+        cameraFolder.open();
+
+        // const controlFolder = gui.addFolder('Controller');
+        // controlFolder.add(pause);
+        // controlFolder.open();
+
+        // grid helper
+        gridHelper = new THREE.GridHelper(gridSize, gridDivision, 0x000000, 0x000000);
+        gridHelper.rotation.x = Math.PI / 2;
         scene.add(gridHelper);
 
-        // Boxes
-        const boxGeom = new THREE.BoxGeometry(1, 1);
-        for (let i = 0; i < gridSize; i++) {
-            for (let j = 0; j < gridSize; j++) {
-                const box = new THREE.Mesh(boxGeom, new THREE.MeshBasicMaterial({color: 'teal'}));
-                box.position.set(i, j, 0);
-                scene.add(box);
+        // collision
+        for (var j = 0; j < Collision.length; ++j) {
+            for (var i = 0; i < Collision.width; ++i) {
+                if (Collision.get_col(i, j) == 0) continue;
+
+                var col_pos = new POS(i, j);
+                createGridFromMapPos(col_pos, 0x808080);
             }
         }
 
-        // // lights
-        // const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x8d8d8d, 3 );
-        // hemiLight.position.set( 0, 20, 0 );
-        // scene.add( hemiLight );
+        var start_pos = new POS(1, 1);
+        createGridFromMapPos(start_pos, 0xff3333);
+        var end_pos = new POS(17, 17);
+        createGridFromMapPos(end_pos, 0x6600cc);
 
-        // const dirLight = new THREE.DirectionalLight( 0xffffff, 3 );
-        // dirLight.position.set( 0, 20, 10 );
-        // scene.add( dirLight );
+        // pf
+        pf = new BFS(start_pos, end_pos);
 
         // renderer
         renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -59,65 +97,21 @@ export function MapRun() {
         });
     }
 
-
-
-
-    // const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
-    // const cubeMat = new THREE.MeshLambertMaterial({color: 0xcccccc});
-
-    // for(let i=0; i<gridSize; i++) {
-    //     for(let j=0; j<gridSize; j++) {
-    //         const cube = new THREE.Mesh(cubeGeo, cubeMat);
-    //         cube.position.set(i, 0, j);
-    //         cube.scale.set(2, 2, 2);
-    //         scene.add(cube);
-    //     }
-    // }
-
-    function createCylinder() {
-        // Cylinder unit
-        const cylGeo = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
-        const cylMat = new THREE.MeshPhongMaterial({color: 0xff0000}); 
-        const cylinder = new THREE.Mesh(cylGeo, cylMat);
-
-        // Place at a grid position 
-        cylinder.position.set(3, 0.5, 5); 
-        cylinder.scale.set(2, 2, 2);
-        scene.add(cylinder);
-    }
-
     // Render loop
     function animate() {
         requestAnimationFrame(animate);
 
+        if (pause) {
+            var pos_list = pf.step();
+
+            for (let i = 0; i < pos_list.length; ++i) {
+                var pos = pos_list[i];
+                createGridFromMapPos(pos, 0x33ff33);
+            }
+        }
         renderer.render(scene, camera);
     }
 
-    // // Movement
-    // let unitX = 3;
-    // let unitZ = 5;
-
-    // function moveUnit(dx, dz) {
-    //     unitX += dx;
-    //     unitZ += dz;
-    //     cylinder.position.set(unitX, 0.5, unitZ);
-    // }
-
-    // // Bind keys
-    // document.addEventListener('keydown', (e) => {
-    //     switch(e.key) {
-    //         case 'ArrowLeft': 
-    //             moveUnit(-1, 0);
-    //             break;
-    //         case 'ArrowRight':
-    //             moveUnit(1, 0);
-    //             break;
-    //         case 'ArrowUp':
-    //             moveUnit(0, 1);
-    //             break; 
-    //         case 'ArrowDown':
-    //             moveUnit(0, -1);
-    //             break;
-    //     }
-    // });
+    init();
+    animate();
 }
