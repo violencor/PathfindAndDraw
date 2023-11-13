@@ -1,5 +1,6 @@
 import * as Collision from "../collision.js"
 import { Queue } from "../utils/queue.js";
+import { CustomMap } from "../utils/map.js";
 
 export class BFS {
 
@@ -8,34 +9,42 @@ export class BFS {
         this.end = end_pos;
         this.frontier = new Queue();
         this.frontier.enqueue(start_pos);
-        this.reached = new Map();
+        this.reached = new CustomMap((pos) => pos.toString());
         this.reached.set(start_pos, true);
+        this.found = false;
     }
 
     step() {
+        if (this.found) return [];
         if (this.frontier.empty()) return [];
         if (this.reached.has(this.end)) return [];
 
         var search_pos_list = [];
 
-        var current = this.frontier.dequeue();
         // console.log("frontier: ", this.frontier.toString());
+        var current = this.frontier.dequeue();
         // console.log("current: (%d, %d) ", current.x, current.y);
 
         var neighbors = Collision.neighbors(current);
         for (let i = 0; i < neighbors.length; ++i) {
             var next = neighbors[i];
-            search_pos_list.push(next);
+            if (next.equals(this.start)) continue;
 
             // found
-            if (next == this.end) break;
+            if (next.equals(this.end)) {
+                this.found = true;
+                break;
+            }
+
+            // skip if reached
+            if (this.reached.has(next)) continue;
 
             // next pos record
-            if (!this.reached.has(next)) {
-                this.frontier.enqueue(next);
-                this.reached.set(next, true);
-                console.log("bfs step: (%d, %d)", next.x, next.y);
-            }
+            this.frontier.enqueue(next);
+            this.reached.set(next, true);
+
+            // dump
+            search_pos_list.push(next);
         }
 
         return search_pos_list;

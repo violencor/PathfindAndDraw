@@ -27,19 +27,16 @@ const cols = [
 
 function is_valid_pos(pos) {
     if (pos.y >= length || pos.y < 0
-        || pos.y > width || pos.x < 0) {
+        || pos.x >= width || pos.x < 0) {
         return false;
     }
 
     return true;
 }
 
-export function get_col(widthIdx, heigthIdx) {
-    if (heigthIdx > length || heigthIdx < 0
-        || widthIdx > width || widthIdx < 0) {
-        return 1;
-    }
-    return cols[(length-1-heigthIdx) * width + widthIdx];
+export function get_col(pos) {
+    if (!is_valid_pos(pos)) return 1;
+    return cols[(length-1-pos.y) * width + pos.x];
 }
 
 export function neighbors(pos) {
@@ -57,6 +54,7 @@ export function neighbors(pos) {
 
         var next = new POS(pos.x + offset.x, pos.y + offset.y);
         if (!is_valid_pos(next)) continue;
+        if (get_col(next) != 0) continue;
 
         list.push(next);
     }
