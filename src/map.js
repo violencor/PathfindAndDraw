@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import * as dat from 'dat.gui';
 import * as Collision from './collision.js';
-import { BFS } from './algorithm/breadth_first_search.js';
 import {POS} from './algorithm/pos.js'
+import * as Factory from './algorithm/factory.js';
 
 let container;
 let scene, camera, renderer, gridHelper;
@@ -13,8 +13,9 @@ var components = {
     colMeshes : [], // 碰撞Mesh数组
     startMesh : undefined, // 起点Mesh
     endMesh : undefined, // 终点Mesh
-    pathMeshes : [], // 路径Mesh数组
+    closePathMeshes : [], // 遍历过close的路径Mesh数组
     lastPathFoundCount : 0, // 上一次找到的路径数量
+    resultPathMeshes : [], // 寻路结果路径Mesh数组
 };
 
 const gridRenderOrder = 2;
@@ -26,11 +27,10 @@ const gridSize = gridDivision * gridSizeEach;
 
 export function MapRun() {
 
-    const algos = ['BFS', 'DFS', 'A*'];
-    const pf_ctrl = {
+    var pf_ctrl = {
         start_pos : new POS(1, 1),
         end_pos : new POS(17, 17),
-        algo: algos[0],
+        algo: Factory.algos[0],
         pause : true,
         step : function() {
             if (pf == undefined) {
@@ -39,27 +39,50 @@ export function MapRun() {
             }
             nextStep();
         },
+        finished : false,
+
+        reset : function() {
+            this.finished = false;
+        }
     }
 
     function nextStep() {
-        var pos_list = pf.step();
 
-        // set last path to white
+        if (pf_ctrl.finished) return;
+
+        // set last path to close
         for (let i = 0; i < components.lastPathFoundCount; ++i) {
-            var idx = components.pathMeshes.length - 1 - i;
-            var grid = components.pathMeshes[idx];
+            var idx = components.closePathMeshes.length - 1 - i;
+            var grid = components.closePathMeshes[idx];
             grid.material.color.setHex(0x33ff33);
         }
+        components.lastPathFoundCount = 0;
 
-        // draw new path
-        for (let i = 0; i < pos_list.length; ++i) {
-            var pos = pos_list[i];
+        if (!pf.found()) {
+            // 还没找到路径, 继续找
+            var pos_list = pf.step();
 
-            var grid = createGridFromMapPos(pos, 0x4876FF);
-            components.pathMeshes.push(grid);
+            // draw new path
+            for (let i = 0; i < pos_list.length; ++i) {
+                var pos = pos_list[i];
+
+                var grid = createGridFromMapPos(pos, 0x4876FF);
+                components.closePathMeshes.push(grid);
+            }
+
+            components.lastPathFoundCount = pos_list.length;
+        } else {
+            // 找到路径后, 把路径画出来
+            var path = pf.getResult();
+            for (let i = 0; i < path.length; ++i) {
+                var pos = path[i];
+
+                var grid = createGridFromMapPos(pos, 0xff3333);
+                components.resultPathMeshes.push(grid);
+            }
+
+            pf_ctrl.finished = true;
         }
-
-        components.lastPathFoundCount = pos_list.length;
     }
 
     function createGrid(x, y, z, color) {
@@ -86,22 +109,25 @@ export function MapRun() {
 
         gui = new dat.GUI();
 
-        const cameraFolder = gui.addFolder('CameraHelper');
-        cameraFolder.add(camera.position, 'x');
-        cameraFolder.add(camera.position, 'y');
-        cameraFolder.add(camera.position, 'z');
-        cameraFolder.open();
+        // const cameraFolder = gui.addFolder('CameraHelper');
+        // cameraFolder.add(camera.position, 'x');
+        // cameraFolder.add(camera.position, 'y');
+        // cameraFolder.add(camera.position, 'z');
+        // cameraFolder.open();
 
         const controlFolder = gui.addFolder('Controller');
         const dropdownController =
-            controlFolder.add(pf_ctrl, 'algo', algos).name('Algorithm');
+            controlFolder.add(pf_ctrl, 'algo', Factory.algos).name('Algorithm');
         controlFolder.add(pf_ctrl, "pause");
         controlFolder.add(pf_ctrl, "step").name("Click to step");
         controlFolder.open();
 
         // Listen for changes in the dropdown value
         dropdownController.onChange(function(value) {
-            console.log('Selected dropdown value:', value);
+            pf_ctrl.algo = value;
+            pf_ctrl.reset();
+            pf = Factory.create(pf_ctrl.algo, pf_ctrl.start_pos, pf_ctrl.end_pos);
+            clearPath();
         });
 
     }
@@ -130,7 +156,7 @@ export function MapRun() {
 
         // camera setup
         const aspectRatio = window.innerWidth/window.innerHeight;
-        console.log("" + window.innerWidth + " " + window.innerHeight);
+        // console.log("" + window.innerWidth + " " + window.innerHeight);
         const cameraWidth = 100;
         const cameraHeight = cameraWidth/aspectRatio;
         camera = new THREE.OrthographicCamera(cameraWidth/-2,
@@ -174,7 +200,7 @@ export function MapRun() {
         initMap();
 
         // pf
-        pf = new BFS(pf_ctrl.start_pos, pf_ctrl.end_pos);
+        pf = Factory.create(pf_ctrl.algo, pf_ctrl.start_pos, pf_ctrl.end_pos);
     }
 
     // Render loop
@@ -188,11 +214,16 @@ export function MapRun() {
 
     function clearPath() {
         // clear path
-        for (let i = 0; i < components.pathMeshes.length; ++i) {
-            var grid = components.pathMeshes[i];
+        for (let i = 0; i < components.closePathMeshes.length; ++i) {
+            var grid = components.closePathMeshes[i];
             scene.remove(grid);
         }
-        components.pathMeshes = [];
+        components.closePathMeshes = [];
+        for (let i = 0; i < components.resultPathMeshes.length; ++i) {
+            var grid = components.resultPathMeshes[i];
+            scene.remove(grid);
+        }
+        components.resultPathMeshes = [];
         components.lastPathFoundCount = 0;
     }
 

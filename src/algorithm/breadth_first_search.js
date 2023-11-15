@@ -11,11 +11,11 @@ export class BFS {
         this.frontier.enqueue(start_pos);
         this.reached = new CustomMap((pos) => pos.toString());
         this.reached.set(start_pos, true);
-        this.found = false;
+        this.hasFound = false;
     }
 
     step() {
-        if (this.found) return [];
+        if (this.hasFound) return [];
         if (this.frontier.empty()) return [];
         if (this.reached.has(this.end)) return [];
 
@@ -30,9 +30,9 @@ export class BFS {
             var next = neighbors[i];
             if (next.equals(this.start)) continue;
 
-            // found
+            // hasFound
             if (next.equals(this.end)) {
-                this.found = true;
+                this.hasFound = true;
                 break;
             }
 
@@ -53,6 +53,16 @@ export class BFS {
     run() {
         while (step().length() > 0) {
         }
+    }
+
+    found() {
+        return this.hasFound;
+    }
+
+    getResult() {
+        var result = [];
+
+        return result;
     }
 
 }
