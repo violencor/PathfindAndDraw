@@ -14,7 +14,7 @@ export class ASTAR_LIKE {
         throw new Error("H Not implemented");
     }
 
-    _distEstimate(pos, parentNode) {
+    _evaluate(pos, parentNode) {
         var g = 0;
         var h = 0;
 
@@ -28,7 +28,7 @@ export class ASTAR_LIKE {
     }
 
     _createNode(pos, parentNode) {
-        var val = this._distEstimate(pos, parentNode);
+        var val = this._evaluate(pos, parentNode);
         return new PF_NODE(pos, parentNode, val.g, val.h);
     }
 
