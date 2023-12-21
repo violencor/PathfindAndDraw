@@ -132,14 +132,24 @@ export function MapRun() {
 
     }
 
+    function colColor(colVal) {
+        if (colVal <= 1) return 0xFFFFFF;
+        if (colVal < 8) return 0xE0E0E0;
+        if (colVal < 16) return 0xC0C0C0;
+        if (colVal <= 32) return 0xA0A0A0;
+
+        return 0x808080;
+    }
+
     function initMap() {
         // collision
         for (var j = 0; j < Collision.length; ++j) {
             for (var i = 0; i < Collision.width; ++i) {
                 var colPos = new POS(i, j);
-                if (Collision.get_col(colPos) == 0) continue;
+                var colVal = Collision.get_col(colPos);
+                if (colVal == 0) continue;
 
-                var colGrid = createGridFromMapPos(colPos, 0x808080);
+                var colGrid = createGridFromMapPos(colPos, colColor(colVal));
                 components.colMeshes.push(colGrid);
             }
         }

@@ -9,7 +9,11 @@ export class PF_NODE {
         this.f = g + h;
     }
 
+    equals(other) {
+        return this.pos.equals(other.pos);
+    }
+
     toString() {
-        return this.pos.toString();
+        return "[" + this.pos.toString() + ": " + this.f + "]";
     }
 }

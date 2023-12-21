@@ -55,6 +55,10 @@ export class ASTAR_LIKE {
         // console.log("current: ", current);
 
         var neighbors = Collision.neighbors(current.pos);
+
+        // mark as reached (close list)
+        this.reached.set(current.pos, true);
+
         for (let i = 0; i < neighbors.length; ++i) {
             var next = neighbors[i];
 
@@ -73,13 +77,25 @@ export class ASTAR_LIKE {
                 break;
             }
 
-            // next pos record
-            this.openList.insert(node);
-            this.reached.set(node.pos, true);
+            // if exists in open list, check update
+            var openNode = this.openList.find(node);
+            if (openNode == undefined) {
+                // insert into open list
+                this.openList.insert(node);
+            } else {
+                // update if better
+                if (node.f < openNode.f) {
+                    openNode.parentNode = current;
+                    openNode.g = node.g;
+                    openNode.h = node.h;
+                    openNode.f = node.f;
+                }
+            }
 
-            // dump
-            searchPosList.push(next);
         }
+
+        // dump
+        searchPosList.push(current.pos);
 
         return searchPosList;
     }

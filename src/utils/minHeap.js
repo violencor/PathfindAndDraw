@@ -12,24 +12,54 @@ export class MinHeap {
     // Insert an element into the heap
     insert(value) {
         this.heap.push(value);
-        this.bubbleUp();
+        // this.bubbleUp();
+    }
+
+    // find
+    find(value) {
+        for (let i = 0; i < this.heap.length; ++i) {
+            if (this.heap[i].equals(value)) {
+                return this.heap[i];
+            }
+        }
+        return undefined;
     }
 
     // Extract the minimum element from the heap
     popMin() {
         if (this.heap.length === 0) {
-            return null; // Heap is empty
+            return undefined; // Heap is empty
         }
 
-        const min = this.heap[0];
-        const lastElement = this.heap.pop();
-
-        if (this.heap.length > 0) {
-            this.heap[0] = lastElement;
-            this.heapify(0);
+        var minScore = 100000;
+        var minNodeIdx = -1;
+        for (let i = 0; i < this.heap.length; ++i) {
+            var score = this.objScoreFunc(this.heap[i]);
+            if (score < minScore) {
+                minScore = score;
+                minNodeIdx = i;
+            }
         }
 
-        return min;
+        if (minNodeIdx < 0) {
+            return undefined;
+        }
+
+        const minNode = this.heap[minNodeIdx];
+        this.heap[minNodeIdx] = this.heap[this.heap.length - 1];
+        this.heap.pop();
+
+        return minNode;
+
+        // const min = this.heap[0];
+        // const lastElement = this.heap.pop();
+
+        // if (this.heap.length > 0) {
+        //     this.heap[0] = lastElement;
+        //     this.heapify(0);
+        // }
+
+        // return min;
     }
 
     // Move the last element up to maintain the heap property
@@ -73,4 +103,9 @@ export class MinHeap {
             this.heapify(smallest);
         }
     }
+
+    toString() {
+        return this.heap.toString();
+    }
+
 }

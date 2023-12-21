@@ -1,4 +1,5 @@
 import { ASTAR_LIKE } from "../algorithm/astar_like.js"
+import * as Collision from '../collision.js'
 
 export class ASTAR extends ASTAR_LIKE {
 
@@ -7,7 +8,7 @@ export class ASTAR extends ASTAR_LIKE {
     }
 
     _calG(pos, parentNode) {
-        return parentNode.g + 1;
+        return parentNode.g + Collision.get_col(pos);
     }
 
     _calH(pos, parentNode) {

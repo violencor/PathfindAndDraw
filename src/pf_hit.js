@@ -63,13 +63,19 @@ export function PfHitRun() {
             const contents = event.target.result;
             const lines = contents.split('\n');
 
+            var minX = 1000000, maxX = -1;
+            var minY = 1000000, maxY = -1;
             for (const line of lines) {
                 const pos = line.split(' ');
-                const x = parseInt(pos[0]) - offsetX;
-                const y = parseInt(pos[1]) - offsetY;
+                const x = parseInt(pos[0]);
+                const y = parseInt(pos[1]);
+
                 if (x < 0 || y < 0) {
                     console.log("invalid pos", x, y);
+                    continue;
                 }
+                if (x < minX) minX = x; if (x > maxX) maxX = x;
+                if (y < minY) minY = y; if (y > maxY) maxY = y;
 
                 const key = y * 1000 + x;
                 var hitData = pfHitGridMap.get(key);
@@ -81,6 +87,14 @@ export function PfHitRun() {
                     pfHitGridMap.set(key, new PfHit(x, y, hitData.counter + 1));
                     // console.log("add counter, key: ", key, " , value: ", pfHitGridMap.get(key));
                 }
+            }
+
+            console.log("minX: ", minX, " , maxX: ", maxX, " , minY: ", minY, " , maxY: ", maxY);
+
+            // map中各点减去偏移(最小值)
+            for (const [key, value] of pfHitGridMap) {
+                value.x -= minX;
+                value.y -= minY;
             }
 
             // renderPfHitData
