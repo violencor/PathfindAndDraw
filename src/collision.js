@@ -25,7 +25,7 @@ const cols = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 10000, 10000, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 ];
 
-function is_valid_pos(pos) {
+export function is_valid_pos(pos) {
     if (pos.y >= length || pos.y < 0
         || pos.x >= width || pos.x < 0) {
         return false;
