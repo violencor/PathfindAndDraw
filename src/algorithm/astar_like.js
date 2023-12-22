@@ -32,7 +32,7 @@ export class ASTAR_LIKE {
         return new PF_NODE(pos, parentNode, val.g, val.h);
     }
 
-    _get_neighbors(pos) {
+    _get_neighbors(pos, posParent, startPos, endPos) {
         return Collision.neighbors(pos);
     }
 
@@ -58,7 +58,7 @@ export class ASTAR_LIKE {
         var current = this.openList.popMin();
         // console.log("current: ", current);
 
-        var neighbors = _get_neighbors(current.pos);
+        var neighbors = _get_neighbors(current.pos, current.parentNode.pos, this.start, this.end);
 
         // mark as reached (close list)
         this.reached.set(current.pos, true);
