@@ -28,8 +28,8 @@ const gridSize = gridDivision * gridSizeEach;
 export function MapRun() {
 
     var pf_ctrl = {
-        start_pos : new POS(1, 1),
-        end_pos : new POS(17, 17),
+        start_pos : Collision.start_pos,
+        end_pos : Collision.end_pos,
         algo: Factory.algos[0],
         pause : true,
         step : function() {

@@ -54,11 +54,15 @@ export class ASTAR_LIKE {
 
         var searchPosList = [];
 
-        // console.log("openList: ", this.openList.toString());
+        console.log("openList: ", this.openList.toString());
         var current = this.openList.popMin();
-        // console.log("current: ", current);
+        console.log("current: ", current);
 
-        var neighbors = _get_neighbors(current.pos, current.parentNode.pos, this.start, this.end);
+        if (current.parentNode == undefined) {
+            var neighbors = this._get_neighbors(current.pos, this.start, this.start, this.end);
+        } else {
+            var neighbors = this._get_neighbors(current.pos, current.parentNode.pos, this.start, this.end);
+        }
 
         // mark as reached (close list)
         this.reached.set(current.pos, true);
